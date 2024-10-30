@@ -1,0 +1,94 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace C_
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+
+           
+
+            /*
+            Soru 1 - Foreach Döngüsü ile Liste Elemanlarını Yazdırma
+            Bir ArrayList oluşturun ve içerisine birkaç tamsayı ekleyin.
+            foreach döngüsü kullanarak listedeki her bir sayıyı ekrana yazdıran bir program yazınız.
+            Döngü tamamlandığında sayıların toplamını da ekrana yazdırınız.
+            */
+
+            ArrayList arrlist = new ArrayList();
+
+            arrlist.Add(143);
+            arrlist.Add(25);
+            arrlist.Add(234);
+            arrlist.Add(456);
+            arrlist.Add(3);
+            arrlist.Add(56);
+
+            int toplam=0;
+
+            foreach (int i in arrlist)
+            {
+                Console.WriteLine(i);
+
+                toplam = toplam + i;
+
+
+            }
+                
+            Console.WriteLine("Dizideki sayilarin toplami: {0}",toplam);
+
+            /*
+            Soru 2 - Hazır Metod Kullanımı 
+            Kullanıcıdan bir cümle girmesini isteyin ve bu cümledeki kelime sayısını hesaplayıp 
+            ekrana yazdıran bir program yazınız. 
+            Kelime sayısını hesaplamak için Split() metodunu kullanabilirsiniz.
+            */
+
+            Console.Write("Bir cumle giriniz: ");
+
+            string cumle = Console.ReadLine();
+
+            string[] kelimeler =cumle.Split(' ');
+
+            Console.WriteLine(kelimeler.Length);
+  
+
+
+            /*
+            Soru 3 - ArrayList ile Alfabetik Sıralama 
+            Kullanıcıdan 5 adet isim alarak bir ArrayList içinde saklayın. 
+            Daha sonra bu isimleri alfabetik olarak sıralayarak ekrana yazdırın. 
+            (Not: ArrayList.Sort() metodunu kullanabilirsiniz.
+            */
+
+            ArrayList isimler = new ArrayList();
+
+            Console.Write("5 adet isim giriniz: ");
+
+            for (int i = 0; i < 5; i++)
+           
+
+            isimler.Add(Console.ReadLine());
+
+            isimler.Sort();
+
+            foreach (string i in isimler) 
+
+            Console.WriteLine(i);
+
+
+
+
+
+            Console.ReadKey();
+        }
+    }
+}
