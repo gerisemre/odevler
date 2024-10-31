@@ -85,6 +85,70 @@ namespace C_
             Console.WriteLine(i);
 
 
+            /*
+            Soru 4 - For Döngüsü ile Fibonacci Serisi 
+            Kullanıcıdan bir sayı girmesini isteyin. Bu sayı kadar 
+            Fibonacci serisindeki sayıları hesaplayıp ekrana yazdıran bir program yazınız. 
+            for döngüsü kullanarak seriyi oluşturun.
+            Örnek: Eğer kullanıcı 5 girerse, ekranda "0 1 1 2 3" yazmalıdır.
+            */
+
+            // 0 1 1 2 3 5 8 13 21 34
+
+            Console.Write("Bir dogal sayi giriniz: ");
+            int sayac = Convert.ToInt32(Console.ReadLine());
+
+            if (sayac >= 0)
+            {
+            int s1 = 0, s2 = 1, sonuc = 1;
+
+            if (sayac >= 0) Console.Write(s1);
+            if (sayac >= 1) Console.Write(" {0}", s2);
+
+            for (int i = 2; i < sayac; i++)
+            {
+            sonuc = s1 + s2;
+            Console.Write($" {sonuc}");
+            s1 = s2;
+            s2 = sonuc;
+
+             }
+            }
+
+            else
+
+            Console.WriteLine("Girdiginiz sayi en az 0 olmalidir!");
+
+
+            /*
+            Soru 5 - While Döngüsü ile Tahmin Oyunu 
+            Kullanıcıdan bir sayı tahmin etmesini isteyen bir program yazınız. 
+            Program, doğru tahmin yapılana kadar kullanıcıdan yeni tahminler almaya devam etmelidir. 
+            Doğru tahmin yapıldığında ekrana bir tebrik mesajı yazdırılmalıdır.
+            Not: Sabit bir sayı belirleyebilir veya Random sınıfı ile rastgele bir sayı oluşturabilirsiniz.
+            */
+
+            Random rand = new Random();
+            
+            int sayi = rand.Next(1,11);
+            int tahmin = 99;
+
+            while (sayi != tahmin)
+            {
+                Console.Write("1 ile 10 arasinda bir sayi giriniz: ");
+
+                tahmin = Convert.ToInt32(Console.ReadLine());
+            }
+            Console.WriteLine("Tebrikler!");
+
+
+
+
+
+
+
+
+
 
 
 
