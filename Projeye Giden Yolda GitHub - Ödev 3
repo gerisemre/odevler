@@ -142,6 +142,86 @@ namespace C_
             Console.WriteLine("Tebrikler!");
 
 
+            /*
+            Soru 6 - Do While Döngüsü ile Basit Hesap Makinesi
+            Kullanıcıdan işlem türünü (+, -, *, /) ve iki sayı alarak işlemi gerçekleştiren bir program yazınız. 
+            Kullanıcı "çıkış" yazana kadar işlemleri tekrarlayan bir do while döngüsü kurunuz.
+            Ekstra: Bölme işlemi sırasında sıfıra bölme hatasını kontrol ediniz.
+            */
+
+            string input1, input2;
+            string islemTuru;
+            double sayi1, sayi2, sonuc;
+            sayi2 = 0; //Varsayilan deger
+            sonuc = 0; //Varsayilan deger
+            islemTuru = "."; //Varsayilan deger
+            Exception hata = null;
+
+            do
+            {
+                try
+                {
+                    Console.Write("Islem turunu giriniz(+,-,*,/) veya 'cikis': ");
+                    islemTuru = Console.ReadLine();
+                    if (islemTuru == "cikis")
+                        break;
+
+                    Console.Write("Birinci sayiyi giriniz veya 'cikis': ");
+                    input1 = Console.ReadLine();
+                    if (input1 == "cikis")
+                        break;
+                    sayi1 = Convert.ToDouble(input1);
+
+                    Console.Write("Ikinci sayiyi giriniz veya 'cikis': ");
+                    input2 = Console.ReadLine();
+                    if (input2 == "cikis")
+                        break;
+                    sayi2 = Convert.ToDouble(input2);
+
+                    switch (islemTuru)
+                    {
+
+                        case "+":
+                            sonuc = sayi1 + sayi2;
+                            break;
+
+                        case "-":
+                            sonuc = sayi1 - sayi2;
+                            break;
+
+                        case "*":
+                            sonuc = sayi1 * sayi2;
+                            break;
+
+                        case "/":
+                            if (sayi2 != 0)
+                                sonuc = sayi1 / sayi2;
+                            else
+                                Console.WriteLine("Hata: Sifira bolme hatasi!");
+                            break;
+
+                        default:
+                            Console.WriteLine("Hata: Gecersiz islem turu secimi!");
+                            break;
+                    }
+
+                }
+
+
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Hata: "+ ex.Message);
+                    hata = ex;
+                }
+
+                if ((islemTuru == "+" || islemTuru == "-" || islemTuru == "*" || (islemTuru == "/"&&sayi2!=0)) && hata == null)
+                Console.WriteLine("Sonuc: " + sonuc);
+            }
+            while (islemTuru != "cikis");
+
+            Console.WriteLine("Programdan cikiliyor...\nBir tusa basiniz.");
+
+
 
 
 
