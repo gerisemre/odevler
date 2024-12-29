@@ -1,0 +1,179 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        AccountingApp app = new AccountingApp();
+        app.Run();
+    }
+}
+
+class Transaction
+{
+    public string Description { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+
+    public Transaction(string description, decimal amount, DateTime date)
+    {
+        Description = description;
+        Amount = amount;
+        Date = date;
+    }
+}
+
+class AccountingApp
+{
+    private List<Transaction> transactions;
+
+    public AccountingApp()
+    {
+        transactions = new List<Transaction>();
+    }
+
+    public void Run()
+    {
+        bool running = true;
+
+        while (running)
+        {
+            Console.WriteLine("\n=== Basit Muhasebe Uygulaması ===");
+            Console.WriteLine("1. Gelir Ekle");
+            Console.WriteLine("2. Gider Ekle");
+            Console.WriteLine("3. Rapor Görüntüle");
+            Console.WriteLine("4. İşlem Geçmişini Görüntüle");
+            Console.WriteLine("5. İstatistikleri Görüntüle");
+            Console.WriteLine("6. Çıkış");
+            Console.Write("Seçiminizi yapın (1-6): ");
+
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    AddTransaction(true);
+                    break;
+                case "2":
+                    AddTransaction(false);
+                    break;
+                case "3":
+                    ShowReport();
+                    break;
+                case "4":
+                    ShowTransactionHistory();
+                    break;
+                case "5":
+                    ShowStatistics();
+                    break;
+                case "6":
+                    running = false;
+                    Console.WriteLine("Çıkış yapılıyor...");
+                    break;
+                default:
+                    Console.WriteLine("Geçersiz seçim. Lütfen tekrar deneyin.");
+                    break;
+            }
+        }
+    }
+
+    private void AddTransaction(bool isIncome)
+    {
+        Console.Write("Açıklama: ");
+        string description = Console.ReadLine();
+
+        Console.Write("Tutar: ");
+        if (decimal.TryParse(Console.ReadLine(), out decimal amount))
+        {
+            if (!isIncome)
+            {
+                amount = -amount; // Giderler negatif olarak kaydedilir.
+            }
+
+            transactions.Add(new Transaction(description, amount, DateTime.Now));
+            Console.WriteLine("İşlem başarıyla kaydedildi.");
+        }
+        else
+        {
+            Console.WriteLine("Geçersiz tutar. İşlem iptal edildi.");
+        }
+    }
+
+    private void ShowReport()
+    {
+        Console.WriteLine("\n=== Aylık Rapor ===");
+
+        decimal totalIncome = 0;
+        decimal totalExpense = 0;
+        decimal netBalance = 0;
+
+        foreach (Transaction transaction in transactions)
+        {
+            if (transaction.Amount > 0)
+            {
+                totalIncome += transaction.Amount;
+            }
+            else
+            {
+                totalExpense += transaction.Amount;
+            }
+
+            netBalance += transaction.Amount;
+        }
+
+        Console.WriteLine($"Toplam Gelir: {totalIncome:C}");
+        Console.WriteLine($"Toplam Gider: {Math.Abs(totalExpense):C}");
+        Console.WriteLine($"Net Bakiye: {netBalance:C}");
+
+        DrawAsciiGraph(totalIncome, Math.Abs(totalExpense));
+    }
+
+    private void DrawAsciiGraph(decimal income, decimal expense)
+    {
+        Console.WriteLine("\n=== ASCII Grafik ===");
+
+        int incomeBars = (int)(income / 100); // Geliri ölçeklendir
+        int expenseBars = (int)(expense / 100); // Gideri ölçeklendir
+
+        Console.WriteLine("Gelir:   " + new string('|', incomeBars));
+        Console.WriteLine("Gider:   " + new string('|', expenseBars));
+    }
+
+    private void ShowTransactionHistory()
+    {
+        Console.WriteLine("\n=== İşlem Geçmişi ===");
+        if (transactions.Count == 0)
+        {
+            Console.WriteLine("Henüz işlem yapılmadı.");
+        }
+        else
+        {
+            foreach (var transaction in transactions)
+            {
+                Console.WriteLine($"{transaction.Date:yyyy-MM-dd HH:mm:ss} - {transaction.Description}: {transaction.Amount:C}");
+            }
+        }
+    }
+
+    private void ShowStatistics()
+    {
+        Console.WriteLine("\n=== İstatistikler ===");
+
+        if (transactions.Count == 0)
+        {
+            Console.WriteLine("Henüz işlem yapılmadı.");
+            return;
+        }
+
+        decimal averageIncome = transactions.Where(t => t.Amount > 0).Select(t => t.Amount).DefaultIfEmpty(0).Average();
+        decimal averageExpense = transactions.Where(t => t.Amount < 0).Select(t => t.Amount).DefaultIfEmpty(0).Average();
+
+        Console.WriteLine($"Ortalama Gelir: {averageIncome:C}");
+        Console.WriteLine($"Ortalama Gider: {Math.Abs(averageExpense):C}");
+
+        var mostRecent = transactions.OrderByDescending(t => t.Date).First();
+        Console.WriteLine($"Son İşlem: {mostRecent.Date:yyyy-MM-dd HH:mm:ss} - {mostRecent.Description}: {mostRecent.Amount:C}");
+    }
+}
