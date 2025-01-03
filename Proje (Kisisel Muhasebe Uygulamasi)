@@ -1,179 +1,1127 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
-class Program
+namespace BankaSistemi
 {
-    static void Main(string[] args)
+    public class Program
     {
-        AccountingApp app = new AccountingApp();
-        app.Run();
-    }
-}
-
-class Transaction
-{
-    public string Description { get; set; }
-    public decimal Amount { get; set; }
-    public DateTime Date { get; set; }
-
-    public Transaction(string description, decimal amount, DateTime date)
-    {
-        Description = description;
-        Amount = amount;
-        Date = date;
-    }
-}
-
-class AccountingApp
-{
-    private List<Transaction> transactions;
-
-    public AccountingApp()
-    {
-        transactions = new List<Transaction>();
-    }
-
-    public void Run()
-    {
-        bool running = true;
-
-        while (running)
+        static void Main(string[] args)
         {
-            Console.WriteLine("\n=== Basit Muhasebe Uygulaması ===");
-            Console.WriteLine("1. Gelir Ekle");
-            Console.WriteLine("2. Gider Ekle");
-            Console.WriteLine("3. Rapor Görüntüle");
-            Console.WriteLine("4. İşlem Geçmişini Görüntüle");
-            Console.WriteLine("5. İstatistikleri Görüntüle");
-            Console.WriteLine("6. Çıkış");
-            Console.Write("Seçiminizi yapın (1-6): ");
+            BankaYonetim banka = new BankaYonetim();
+            banka.Calistir();
+        }
+    }
 
-            string choice = Console.ReadLine();
+    public class Musteri
+    {
+        public int MusteriId { get; set; }
+        public string Ad { get; set; }
+        public string Soyad { get; set; }
+        public string TCKN { get; set; }
+        public string Telefon { get; set; }
+        public string Email { get; set; }
+        public string Adres { get; set; }
+        public List<Hesap> Hesaplar { get; set; }
+        public string KullaniciAdi { get; set; }
+        public string Sifre { get; set; }
+        public DateTime KayitTarihi { get; set; }
 
-            switch (choice)
+        public Musteri()
+        {
+            Hesaplar = new List<Hesap>();
+            KayitTarihi = DateTime.Now;
+        }
+    }
+
+    public class Hesap
+    {
+        public string HesapNo { get; set; }
+        public decimal Bakiye { get; set; }
+        public string HesapTuru { get; set; }
+        public bool AktifMi { get; set; }
+        public List<IslemGecmisi> Islemler { get; set; }
+        public DateTime AcilisTarihi { get; set; }
+
+        public Hesap()
+        {
+            Islemler = new List<IslemGecmisi>();
+            AcilisTarihi = DateTime.Now;
+            AktifMi = true;
+            HesapNo = GenerateHesapNo();
+        }
+
+        private string GenerateHesapNo()
+        {
+            Random rnd = new Random();
+            return rnd.Next(100000, 999999).ToString();
+        }
+    }
+
+    public class IslemGecmisi
+    {
+        public int IslemId { get; set; }
+        public string IslemTuru { get; set; }
+        public decimal Miktar { get; set; }
+        public DateTime IslemTarihi { get; set; }
+        public string Aciklama { get; set; }
+        public string KaynakHesap { get; set; }
+        public string HedefHesap { get; set; }
+    }
+
+    public class Kredi
+    {
+        public int KrediId { get; set; }
+        public int MusteriId { get; set; }
+        public decimal Miktar { get; set; }
+        public decimal FaizOrani { get; set; }
+        public int VadeSuresi { get; set; }
+        public decimal AylikTaksit { get; set; }
+        public DateTime BaslangicTarihi { get; set; }
+        public string Durumu { get; set; } // Başvuru, Onaylandı, Reddedildi
+        public decimal KalanBorc { get; set; }
+    }
+
+    public class OtomatikOdeme
+    {
+        public int OdemeId { get; set; }
+        public string HesapNo { get; set; }
+        public string OdemeTuru { get; set; } // Fatura, Kredi Taksiti
+        public decimal Miktar { get; set; }
+        public int GunNo { get; set; }
+        public bool AktifMi { get; set; }
+        public string Aciklama { get; set; }
+    }
+
+    public class Fatura
+    {
+        public int FaturaId { get; set; }
+        public string FaturaTipi { get; set; } // Elektrik, Su, Doğalgaz, İnternet
+        public string AboneNo { get; set; }
+        public decimal Tutar { get; set; }
+        public DateTime SonOdemeTarihi { get; set; }
+        public bool Odendi { get; set; }
+    }
+
+    public class BankaYonetim
+    {
+        private List<Musteri> musteriler;
+        private Musteri aktifMusteri;
+        private int sonMusteriId = 0;
+        private List<Kredi> krediler;
+        private List<OtomatikOdeme> otomatikOdemeler;
+        private List<Fatura> faturalar;
+        private Dictionary<string, decimal> dovizKurlari;
+
+        public BankaYonetim()
+        {
+            musteriler = new List<Musteri>();
+            OrnekVerileriYukle();
+            krediler = new List<Kredi>();
+            otomatikOdemeler = new List<OtomatikOdeme>();
+            faturalar = new List<Fatura>();
+            dovizKurlari = new Dictionary<string, decimal>
+            {
+                {"USD", 28.5M},
+                {"EUR", 31.2M},
+                {"GBP", 36.4M}
+            };
+        }
+
+        private void OrnekVerileriYukle()
+        {
+            var musteri = new Musteri
+            {
+                MusteriId = ++sonMusteriId,
+                Ad = "Test",
+                Soyad = "Kullanıcı",
+                TCKN = "12345678901",
+                KullaniciAdi = "test",
+                Sifre = "1234"
+            };
+
+            var hesap = new Hesap
+            {
+                Bakiye = 1000,
+                HesapTuru = "Vadesiz"
+            };
+
+            musteri.Hesaplar.Add(hesap);
+            musteriler.Add(musteri);
+        }
+
+        public void Calistir()
+        {
+            while (true)
+            {
+                if (aktifMusteri == null)
+                {
+                    GirisMenusunuGoster();
+                }
+                else
+                {
+                    AnaMenuyuGoster();
+                }
+            }
+        }
+
+        private void GirisMenusunuGoster()
+        {
+            Console.Clear();
+            Console.WriteLine("=== BANKA SİSTEMİ ===");
+            Console.WriteLine("1. Giriş Yap");
+            Console.WriteLine("2. Yeni Müşteri Kaydı");
+            Console.WriteLine("3. Çıkış");
+            Console.Write("Seçiminiz: ");
+
+            string secim = Console.ReadLine();
+
+            switch (secim)
             {
                 case "1":
-                    AddTransaction(true);
+                    GirisYap();
                     break;
                 case "2":
-                    AddTransaction(false);
+                    YeniMusteriKaydi();
                     break;
                 case "3":
-                    ShowReport();
-                    break;
-                case "4":
-                    ShowTransactionHistory();
-                    break;
-                case "5":
-                    ShowStatistics();
-                    break;
-                case "6":
-                    running = false;
-                    Console.WriteLine("Çıkış yapılıyor...");
+                    Environment.Exit(0);
                     break;
                 default:
-                    Console.WriteLine("Geçersiz seçim. Lütfen tekrar deneyin.");
+                    Console.WriteLine("Geçersiz seçim!");
+                    Thread.Sleep(2000);
                     break;
             }
         }
-    }
 
-    private void AddTransaction(bool isIncome)
-    {
-        Console.Write("Açıklama: ");
-        string description = Console.ReadLine();
-
-        Console.Write("Tutar: ");
-        if (decimal.TryParse(Console.ReadLine(), out decimal amount))
+        private void GirisYap()
         {
-            if (!isIncome)
+            Console.Clear();
+            Console.WriteLine("=== GİRİŞ ===");
+            Console.Write("Kullanıcı Adı: ");
+            string kullaniciAdi = Console.ReadLine();
+            Console.Write("Şifre: ");
+            string sifre = Console.ReadLine();
+
+            aktifMusteri = musteriler.FirstOrDefault(m =>
+                m.KullaniciAdi == kullaniciAdi && m.Sifre == sifre);
+
+            if (aktifMusteri == null)
             {
-                amount = -amount; // Giderler negatif olarak kaydedilir.
+                Console.WriteLine("Hatalı kullanıcı adı veya şifre!");
+                Thread.Sleep(2000);
+            }
+        }
+
+        private void YeniMusteriKaydi()
+        {
+            Console.Clear();
+            Console.WriteLine("=== YENİ MÜŞTERİ KAYDI ===");
+
+            var yeniMusteri = new Musteri();
+            yeniMusteri.MusteriId = ++sonMusteriId;
+
+            Console.Write("Ad: ");
+            yeniMusteri.Ad = Console.ReadLine();
+
+            Console.Write("Soyad: ");
+            yeniMusteri.Soyad = Console.ReadLine();
+
+            Console.Write("TCKN: ");
+            yeniMusteri.TCKN = Console.ReadLine();
+
+            Console.Write("Telefon: ");
+            yeniMusteri.Telefon = Console.ReadLine();
+
+            Console.Write("Email: ");
+            yeniMusteri.Email = Console.ReadLine();
+
+            Console.Write("Adres: ");
+            yeniMusteri.Adres = Console.ReadLine();
+
+            Console.Write("Kullanıcı Adı: ");
+            yeniMusteri.KullaniciAdi = Console.ReadLine();
+
+            Console.Write("Şifre: ");
+            yeniMusteri.Sifre = Console.ReadLine();
+
+            var yeniHesap = new Hesap
+            {
+                HesapTuru = "Vadesiz",
+                Bakiye = 0
+            };
+
+            yeniMusteri.Hesaplar.Add(yeniHesap);
+            musteriler.Add(yeniMusteri);
+
+            Console.WriteLine("\nKayıt başarıyla tamamlandı!");
+            Thread.Sleep(2000);
+        }
+
+        private void AnaMenuyuGoster()
+        {
+            Console.Clear();
+            Console.WriteLine($"Hoş geldiniz, {aktifMusteri.Ad} {aktifMusteri.Soyad}");
+            Console.WriteLine("=== ANA MENÜ ===");
+            Console.WriteLine("1. Hesap Bilgilerimi Göster");
+            Console.WriteLine("2. Para Yatır");
+            Console.WriteLine("3. Para Çek");
+            Console.WriteLine("4. Havale Yap");
+            Console.WriteLine("5. Hesap Hareketleri");
+            Console.WriteLine("6. Yeni Hesap Aç");
+            Console.WriteLine("7. Hesap Kapat");
+            Console.WriteLine("8. Profil Bilgilerimi Güncelle");
+            Console.WriteLine("9. Kredi İşlemleri");
+            Console.WriteLine("10. Döviz İşlemleri");
+            Console.WriteLine("11. Otomatik Ödeme Talimatları");
+            Console.WriteLine("12. Fatura Ödeme");
+            Console.WriteLine("13. Çıkış");
+            Console.Write("Seçiminiz: ");
+
+            string secim = Console.ReadLine();
+
+            switch (secim)
+            {
+                case "1":
+                    HesapBilgileriniGoster();
+                    break;
+                case "2":
+                    ParaYatir();
+                    break;
+                case "3":
+                    ParaCek();
+                    break;
+                case "4":
+                    HavaleYap();
+                    break;
+                case "5":
+                    HesapHareketleriniGoster();
+                    break;
+                case "6":
+                    YeniHesapAc();
+                    break;
+                case "7":
+                    HesapKapat();
+                    break;
+                case "8":
+                    ProfilGuncelle();
+                    break;
+                case "9":
+                    KrediIslemleriMenusu();
+                    break;
+                case "10":
+                    DovizIslemleriMenusu();
+                    break;
+                case "11":
+                    OtomatikOdemeMenusu();
+                    break;
+                case "12":
+                    FaturaOdemeMenusu();
+                    break;
+                case "13":
+                    aktifMusteri = null;
+                    break;
+                default:
+                    Console.WriteLine("Geçersiz seçim!");
+                    Thread.Sleep(2000);
+                    break;
+            }
+        }
+
+        private void HesapBilgileriniGoster()
+        {
+            Console.Clear();
+            Console.WriteLine("=== HESAP BİLGİLERİ ===");
+
+            foreach (var hesap in aktifMusteri.Hesaplar)
+            {
+                Console.WriteLine($"\nHesap No: {hesap.HesapNo}");
+                Console.WriteLine($"Hesap Türü: {hesap.HesapTuru}");
+                Console.WriteLine($"Bakiye: {hesap.Bakiye:C}");
+                Console.WriteLine($"Durum: {(hesap.AktifMi ? "Aktif" : "Kapalı")}");
+                Console.WriteLine($"Açılış Tarihi: {hesap.AcilisTarihi}");
+                Console.WriteLine("------------------------");
             }
 
-            transactions.Add(new Transaction(description, amount, DateTime.Now));
-            Console.WriteLine("İşlem başarıyla kaydedildi.");
+            Console.WriteLine("\nDevam etmek için bir tuşa basın...");
+            Console.ReadKey();
         }
-        else
+
+        private void ParaYatir()
         {
-            Console.WriteLine("Geçersiz tutar. İşlem iptal edildi.");
-        }
-    }
+            Console.Clear();
+            Console.WriteLine("=== PARA YATIRMA ===");
 
-    private void ShowReport()
-    {
-        Console.WriteLine("\n=== Aylık Rapor ===");
+            var hesap = HesapSec();
+            if (hesap == null) return;
 
-        decimal totalIncome = 0;
-        decimal totalExpense = 0;
-        decimal netBalance = 0;
-
-        foreach (Transaction transaction in transactions)
-        {
-            if (transaction.Amount > 0)
+            Console.Write("Yatırılacak miktar: ");
+            if (decimal.TryParse(Console.ReadLine(), out decimal miktar) && miktar > 0)
             {
-                totalIncome += transaction.Amount;
+                hesap.Bakiye += miktar;
+
+                var islem = new IslemGecmisi
+                {
+                    IslemTuru = "Para Yatırma",
+                    Miktar = miktar,
+                    IslemTarihi = DateTime.Now,
+                    KaynakHesap = hesap.HesapNo,
+                    Aciklama = "Para yatırma işlemi"
+                };
+
+                hesap.Islemler.Add(islem);
+
+                Console.WriteLine("İşlem başarıyla tamamlandı!");
             }
             else
             {
-                totalExpense += transaction.Amount;
+                Console.WriteLine("Geçersiz miktar!");
             }
 
-            netBalance += transaction.Amount;
+            Thread.Sleep(2000);
         }
 
-        Console.WriteLine($"Toplam Gelir: {totalIncome:C}");
-        Console.WriteLine($"Toplam Gider: {Math.Abs(totalExpense):C}");
-        Console.WriteLine($"Net Bakiye: {netBalance:C}");
-
-        DrawAsciiGraph(totalIncome, Math.Abs(totalExpense));
-    }
-
-    private void DrawAsciiGraph(decimal income, decimal expense)
-    {
-        Console.WriteLine("\n=== ASCII Grafik ===");
-
-        int incomeBars = (int)(income / 100); // Geliri ölçeklendir
-        int expenseBars = (int)(expense / 100); // Gideri ölçeklendir
-
-        Console.WriteLine("Gelir:   " + new string('|', incomeBars));
-        Console.WriteLine("Gider:   " + new string('|', expenseBars));
-    }
-
-    private void ShowTransactionHistory()
-    {
-        Console.WriteLine("\n=== İşlem Geçmişi ===");
-        if (transactions.Count == 0)
+        private void ParaCek()
         {
-            Console.WriteLine("Henüz işlem yapılmadı.");
-        }
-        else
-        {
-            foreach (var transaction in transactions)
+            Console.Clear();
+            Console.WriteLine("=== PARA ÇEKME ===");
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            Console.Write("Çekilecek miktar: ");
+            if (decimal.TryParse(Console.ReadLine(), out decimal miktar) && miktar > 0)
             {
-                Console.WriteLine($"{transaction.Date:yyyy-MM-dd HH:mm:ss} - {transaction.Description}: {transaction.Amount:C}");
+                if (hesap.Bakiye >= miktar)
+                {
+                    hesap.Bakiye -= miktar;
+
+                    var islem = new IslemGecmisi
+                    {
+                        IslemTuru = "Para Çekme",
+                        Miktar = miktar,
+                        IslemTarihi = DateTime.Now,
+                        KaynakHesap = hesap.HesapNo,
+                        Aciklama = "Para çekme işlemi"
+                    };
+
+                    hesap.Islemler.Add(islem);
+
+                    Console.WriteLine("İşlem başarıyla tamamlandı!");
+                }
+                else
+                {
+                    Console.WriteLine("Yetersiz bakiye!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Geçersiz miktar!");
+            }
+
+            Thread.Sleep(2000);
+        }
+
+        private void HavaleYap()
+        {
+            Console.Clear();
+            Console.WriteLine("=== HAVALE ===");
+
+            var kaynakHesap = HesapSec();
+            if (kaynakHesap == null) return;
+
+            Console.Write("Hedef hesap no: ");
+            string hedefHesapNo = Console.ReadLine();
+
+            var hedefHesap = musteriler
+                .SelectMany(m => m.Hesaplar)
+                .FirstOrDefault(h => h.HesapNo == hedefHesapNo && h.AktifMi);
+
+            if (hedefHesap == null)
+            {
+                Console.WriteLine("Hedef hesap bulunamadı!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.Write("Havale miktarı: ");
+            if (decimal.TryParse(Console.ReadLine(), out decimal miktar) && miktar > 0)
+            {
+                if (kaynakHesap.Bakiye >= miktar)
+                {
+                    kaynakHesap.Bakiye -= miktar;
+                    hedefHesap.Bakiye += miktar;
+
+                    var islem = new IslemGecmisi
+                    {
+                        IslemTuru = "Havale",
+                        Miktar = miktar,
+                        IslemTarihi = DateTime.Now,
+                        KaynakHesap = kaynakHesap.HesapNo,
+                        HedefHesap = hedefHesap.HesapNo,
+                        Aciklama = "Havale işlemi"
+                    };
+
+                    kaynakHesap.Islemler.Add(islem);
+                    hedefHesap.Islemler.Add(islem);
+
+                    Console.WriteLine("Havale başarıyla tamamlandı!");
+                }
+                else
+                {
+                    Console.WriteLine("Yetersiz bakiye!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Geçersiz miktar!");
+            }
+
+            Thread.Sleep(2000);
+        }
+
+        private void HesapHareketleriniGoster()
+        {
+            Console.Clear();
+            Console.WriteLine("=== HESAP HAREKETLERİ ===");
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            if (hesap.Islemler.Any())
+            {
+                foreach (var islem in hesap.Islemler.OrderByDescending(i => i.IslemTarihi))
+                {
+                    Console.WriteLine($"\nİşlem Türü: {islem.IslemTuru}");
+                    Console.WriteLine($"Miktar: {islem.Miktar:C}");
+                    Console.WriteLine($"Tarih: {islem.IslemTarihi}");
+                    Console.WriteLine($"Kaynak Hesap: {islem.KaynakHesap}");
+                    if (!string.IsNullOrEmpty(islem.HedefHesap))
+                        Console.WriteLine($"Hedef Hesap: {islem.HedefHesap}");
+                    Console.WriteLine($"Açıklama: {islem.Aciklama}");
+                    Console.WriteLine("------------------------");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Henüz işlem yapılmamış!");
+            }
+
+            Console.WriteLine("\nDevam etmek için bir tuşa basın...");
+            Console.ReadKey();
+        }
+
+        private void YeniHesapAc()
+        {
+            Console.Clear();
+            Console.WriteLine("=== YENİ HESAP AÇMA ===");
+            Console.WriteLine("1. Vadesiz Hesap");
+            Console.WriteLine("2. Vadeli Hesap");
+            Console.Write("Hesap türü seçin: ");
+
+            string secim = Console.ReadLine();
+            string hesapTuru = secim == "1" ? "Vadesiz" : "Vadeli";
+
+            var yeniHesap = new Hesap
+            {
+                HesapTuru = hesapTuru,
+                Bakiye = 0
+            };
+
+            aktifMusteri.Hesaplar.Add(yeniHesap);
+            Console.WriteLine($"\nYeni {hesapTuru} hesap başarıyla açıldı!");
+            Console.WriteLine($"Hesap No: {yeniHesap.HesapNo}");
+
+            Thread.Sleep(2000);
+        }
+
+        private void HesapKapat()
+        {
+            Console.Clear();
+            Console.WriteLine("=== HESAP KAPATMA ===");
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            if (hesap.Bakiye > 0)
+            {
+                Console.WriteLine("Hesapta para bulunduğu için kapatılamaz!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            hesap.AktifMi = false;
+            Console.WriteLine("Hesap başarıyla kapatıldı!");
+            Thread.Sleep(2000);
+        }
+
+        private void ProfilGuncelle()
+        {
+            Console.Clear();
+            Console.WriteLine("=== PROFİL GÜNCELLEME ===");
+
+            Console.Write("Telefon (Boş bırakmak için Enter): ");
+            string telefon = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(telefon))
+                aktifMusteri.Telefon = telefon;
+
+            Console.Write("Email (Boş bırakmak için Enter): ");
+            string email = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(email))
+                aktifMusteri.Email = email;
+
+            Console.Write("Adres (Boş bırakmak için Enter): ");
+            string adres = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(adres))
+                aktifMusteri.Adres = adres;
+
+            Console.Write("Yeni Şifre (Boş bırakmak için Enter): ");
+            string sifre = Console.ReadLine();
+            if (!string.IsNullOrWhiteSpace(sifre))
+                aktifMusteri.Sifre = sifre;
+
+            Console.WriteLine("\nProfil bilgileri güncellendi!");
+            Thread.Sleep(2000);
+        }
+
+        private void KrediIslemleriMenusu()
+        {
+            Console.Clear();
+            Console.WriteLine("=== KREDİ İŞLEMLERİ ===");
+            Console.WriteLine("1. Kredi Başvurusu");
+            Console.WriteLine("2. Kredi Durumu Sorgula");
+            Console.WriteLine("3. Kredi Ödeme");
+            Console.WriteLine("4. Ana Menü");
+
+            string secim = Console.ReadLine();
+            switch (secim)
+            {
+                case "1":
+                    KrediBasvurusu();
+                    break;
+                case "2":
+                    KrediDurumuSorgula();
+                    break;
+                case "3":
+                    KrediOdeme();
+                    break;
             }
         }
-    }
 
-    private void ShowStatistics()
-    {
-        Console.WriteLine("\n=== İstatistikler ===");
-
-        if (transactions.Count == 0)
+        private void KrediBasvurusu()
         {
-            Console.WriteLine("Henüz işlem yapılmadı.");
-            return;
+            Console.Clear();
+            Console.WriteLine("=== KREDİ BAŞVURUSU ===");
+            
+            Console.Write("Talep edilen miktar: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal miktar))
+            {
+                Console.WriteLine("Geçersiz miktar!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.Write("Vade süresi (ay): ");
+            if (!int.TryParse(Console.ReadLine(), out int vade))
+            {
+                Console.WriteLine("Geçersiz vade!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            var kredi = new Kredi
+            {
+                KrediId = krediler.Count + 1,
+                MusteriId = aktifMusteri.MusteriId,
+                Miktar = miktar,
+                VadeSuresi = vade,
+                FaizOrani = 1.89M,
+                BaslangicTarihi = DateTime.Now,
+                Durumu = "Başvuru",
+                KalanBorc = miktar + (miktar * 1.89M * vade / 12),
+                AylikTaksit = (miktar + (miktar * 1.89M * vade / 12)) / vade
+            };
+
+            krediler.Add(kredi);
+            Console.WriteLine("\nKredi başvurunuz alınmıştır. Sonucu sorgulayabilirsiniz.");
+            Thread.Sleep(2000);
         }
 
-        decimal averageIncome = transactions.Where(t => t.Amount > 0).Select(t => t.Amount).DefaultIfEmpty(0).Average();
-        decimal averageExpense = transactions.Where(t => t.Amount < 0).Select(t => t.Amount).DefaultIfEmpty(0).Average();
+        private void DovizIslemleriMenusu()
+        {
+            Console.Clear();
+            Console.WriteLine("=== DÖVİZ İŞLEMLERİ ===");
+            Console.WriteLine("Güncel Kurlar:");
+            foreach (var kur in dovizKurlari)
+            {
+                Console.WriteLine($"{kur.Key}: {kur.Value:N2} TL");
+            }
 
-        Console.WriteLine($"Ortalama Gelir: {averageIncome:C}");
-        Console.WriteLine($"Ortalama Gider: {Math.Abs(averageExpense):C}");
+            Console.WriteLine("\n1. Döviz Al");
+            Console.WriteLine("2. Döviz Sat");
+            Console.WriteLine("3. Ana Menü");
 
-        var mostRecent = transactions.OrderByDescending(t => t.Date).First();
-        Console.WriteLine($"Son İşlem: {mostRecent.Date:yyyy-MM-dd HH:mm:ss} - {mostRecent.Description}: {mostRecent.Amount:C}");
+            string secim = Console.ReadLine();
+            switch (secim)
+            {
+                case "1":
+                    DovizAl();
+                    break;
+                case "2":
+                    DovizSat();
+                    break;
+            }
+        }
+
+        private void DovizAl()
+        {
+            Console.Clear();
+            Console.WriteLine("=== DÖVİZ ALIM ===");
+            
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            Console.Write("Döviz türü (USD/EUR/GBP): ");
+            string dovizTuru = Console.ReadLine().ToUpper();
+
+            if (!dovizKurlari.ContainsKey(dovizTuru))
+            {
+                Console.WriteLine("Geçersiz döviz türü!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.Write("Miktar: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal miktar))
+            {
+                Console.WriteLine("Geçersiz miktar!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            decimal toplamTutar = miktar * dovizKurlari[dovizTuru];
+
+            if (hesap.Bakiye >= toplamTutar)
+            {
+                hesap.Bakiye -= toplamTutar;
+                Console.WriteLine($"\n{miktar} {dovizTuru} alım işlemi başarıyla gerçekleştirildi.");
+                Console.WriteLine($"Toplam Tutar: {toplamTutar:N2} TL");
+                
+                var islem = new IslemGecmisi
+                {
+                    IslemTuru = "Döviz Alım",
+                    Miktar = toplamTutar,
+                    IslemTarihi = DateTime.Now,
+                    KaynakHesap = hesap.HesapNo,
+                    Aciklama = $"{miktar} {dovizTuru} alındı"
+                };
+                
+                hesap.Islemler.Add(islem);
+            }
+            else
+            {
+                Console.WriteLine("Yetersiz bakiye!");
+            }
+
+            Thread.Sleep(2000);
+        }
+
+        private void OtomatikOdemeMenusu()
+        {
+            Console.Clear();
+            Console.WriteLine("=== OTOMATİK ÖDEME TALİMATLARI ===");
+            Console.WriteLine("1. Yeni Otomatik Ödeme Talimatı");
+            Console.WriteLine("2. Talimatları Listele");
+            Console.WriteLine("3. Talimat İptal");
+            Console.WriteLine("4. Ana Menü");
+
+            string secim = Console.ReadLine();
+            switch (secim)
+            {
+                case "1":
+                    YeniOtomatikOdemeTalimati();
+                    break;
+                case "2":
+                    OtomatikOdemeTalimatlariniListele();
+                    break;
+                case "3":
+                    OtomatikOdemeTalimatiIptal();
+                    break;
+            }
+        }
+
+        private void YeniOtomatikOdemeTalimati()
+        {
+            Console.Clear();
+            Console.WriteLine("=== YENİ OTOMATİK ÖDEME TALİMATI ===");
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            Console.WriteLine("Ödeme Türü:");
+            Console.WriteLine("1. Fatura Ödemesi");
+            Console.WriteLine("2. Kredi Taksiti");
+            
+            string tur = Console.ReadLine() == "1" ? "Fatura" : "Kredi Taksiti";
+
+            Console.Write("Aylık Ödeme Tutarı: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal miktar))
+            {
+                Console.WriteLine("Geçersiz tutar!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.Write("Ödeme Günü (1-31): ");
+            if (!int.TryParse(Console.ReadLine(), out int gun) || gun < 1 || gun > 31)
+            {
+                Console.WriteLine("Geçersiz gün!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            var talimat = new OtomatikOdeme
+            {
+                OdemeId = otomatikOdemeler.Count + 1,
+                HesapNo = hesap.HesapNo,
+                OdemeTuru = tur,
+                Miktar = miktar,
+                GunNo = gun,
+                AktifMi = true,
+                Aciklama = $"{tur} için otomatik ödeme"
+            };
+
+            otomatikOdemeler.Add(talimat);
+            Console.WriteLine("\nOtomatik ödeme talimatı başarıyla oluşturuldu.");
+            Thread.Sleep(2000);
+        }
+
+        private void FaturaOdemeMenusu()
+        {
+            Console.Clear();
+            Console.WriteLine("=== FATURA ÖDEME ===");
+            Console.WriteLine("1. Elektrik Faturası");
+            Console.WriteLine("2. Su Faturası");
+            Console.WriteLine("3. Doğalgaz Faturası");
+            Console.WriteLine("4. İnternet Faturası");
+            Console.WriteLine("5. Ana Menü");
+
+            string secim = Console.ReadLine();
+            if (secim != "5")
+            {
+                FaturaOde(secim);
+            }
+        }
+
+        private void FaturaOde(string faturaTipi)
+        {
+            string[] faturaTipleri = { "Elektrik", "Su", "Doğalgaz", "İnternet" };
+            string secilenTip = faturaTipleri[int.Parse(faturaTipi) - 1];
+
+            Console.Clear();
+            Console.WriteLine($"=== {secilenTip} FATURASI ÖDEME ===");
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            Console.Write("Abone No: ");
+            string aboneNo = Console.ReadLine();
+
+            // Örnek fatura oluştur
+            Random rnd = new Random();
+            var fatura = new Fatura
+            {
+                FaturaId = faturalar.Count + 1,
+                FaturaTipi = secilenTip,
+                AboneNo = aboneNo,
+                Tutar = rnd.Next(50, 500),
+                SonOdemeTarihi = DateTime.Now.AddDays(15),
+                Odendi = false
+            };
+
+            Console.WriteLine($"\nFatura Tutarı: {fatura.Tutar:C}");
+            Console.Write("Ödemeyi onaylıyor musunuz? (E/H): ");
+
+            if (Console.ReadLine().ToUpper() == "E")
+            {
+                if (hesap.Bakiye >= fatura.Tutar)
+                {
+                    hesap.Bakiye -= fatura.Tutar;
+                    fatura.Odendi = true;
+                    faturalar.Add(fatura);
+
+                    var islem = new IslemGecmisi
+                    {
+                        IslemTuru = "Fatura Ödeme",
+                        Miktar = fatura.Tutar,
+                        IslemTarihi = DateTime.Now,
+                        KaynakHesap = hesap.HesapNo,
+                        Aciklama = $"{secilenTip} faturası ödemesi"
+                    };
+
+                    hesap.Islemler.Add(islem);
+
+                    Console.WriteLine("Fatura başarıyla ödendi.");
+                }
+                else
+                {
+                    Console.WriteLine("Yetersiz bakiye!");
+                }
+            }
+
+            Thread.Sleep(2000);
+        }
+
+        private Hesap HesapSec()
+        {
+            var aktifHesaplar = aktifMusteri.Hesaplar.Where(h => h.AktifMi).ToList();
+
+            if (!aktifHesaplar.Any())
+            {
+                Console.WriteLine("Aktif hesabınız bulunmamaktadır!");
+                Thread.Sleep(2000);
+                return null;
+            }
+
+            Console.WriteLine("\nHesaplarınız:");
+            for (int i = 0; i < aktifHesaplar.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. Hesap No: {aktifHesaplar[i].HesapNo} - Bakiye: {aktifHesaplar[i].Bakiye:C}");
+            }
+
+            Console.Write("\nHesap seçin (1-" + aktifHesaplar.Count + "): ");
+            if (int.TryParse(Console.ReadLine(), out int secim) && secim >= 1 && secim <= aktifHesaplar.Count)
+            {
+                return aktifHesaplar[secim - 1];
+            }
+
+            Console.WriteLine("Geçersiz seçim!");
+            Thread.Sleep(2000);
+            return null;
+        }
+
+        private void KrediDurumuSorgula()
+        {
+            Console.Clear();
+            Console.WriteLine("=== KREDİ DURUMU SORGULAMA ===");
+
+            var musteriKredileri = krediler.Where(k => k.MusteriId == aktifMusteri.MusteriId).ToList();
+
+            if (!musteriKredileri.Any())
+            {
+                Console.WriteLine("Aktif krediniz bulunmamaktadır!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            foreach (var kredi in musteriKredileri)
+            {
+                Console.WriteLine($"\nKredi ID: {kredi.KrediId}");
+                Console.WriteLine($"Kredi Tutarı: {kredi.Miktar:C}");
+                Console.WriteLine($"Faiz Oranı: %{kredi.FaizOrani}");
+                Console.WriteLine($"Vade Süresi: {kredi.VadeSuresi} ay");
+                Console.WriteLine($"Aylık Taksit: {kredi.AylikTaksit:C}");
+                Console.WriteLine($"Kalan Borç: {kredi.KalanBorc:C}");
+                Console.WriteLine($"Başlangıç Tarihi: {kredi.BaslangicTarihi}");
+                Console.WriteLine($"Durumu: {kredi.Durumu}");
+                Console.WriteLine("------------------------");
+            }
+
+            Console.WriteLine("\nDevam etmek için bir tuşa basın...");
+            Console.ReadKey();
+        }
+
+        private void KrediOdeme()
+        {
+            Console.Clear();
+            Console.WriteLine("=== KREDİ ÖDEME ===");
+
+            var musteriKredileri = krediler
+                .Where(k => k.MusteriId == aktifMusteri.MusteriId && k.Durumu == "Onaylandı")
+                .ToList();
+
+            if (!musteriKredileri.Any())
+            {
+                Console.WriteLine("Ödenecek krediniz bulunmamaktadır!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.WriteLine("Kredileriniz:");
+            for (int i = 0; i < musteriKredileri.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. Kredi - Kalan Borç: {musteriKredileri[i].KalanBorc:C}");
+            }
+
+            Console.Write("\nÖdeme yapılacak krediyi seçin (1-" + musteriKredileri.Count + "): ");
+            if (!int.TryParse(Console.ReadLine(), out int krediSecim) || 
+                krediSecim < 1 || krediSecim > musteriKredileri.Count)
+            {
+                Console.WriteLine("Geçersiz seçim!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            var secilenKredi = musteriKredileri[krediSecim - 1];
+
+            Console.WriteLine($"\nAylık Taksit Tutarı: {secilenKredi.AylikTaksit:C}");
+            Console.Write("Ödenecek tutarı girin: ");
+            
+            if (!decimal.TryParse(Console.ReadLine(), out decimal odenecekTutar) || odenecekTutar <= 0)
+            {
+                Console.WriteLine("Geçersiz tutar!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            if (hesap.Bakiye >= odenecekTutar)
+            {
+                hesap.Bakiye -= odenecekTutar;
+                secilenKredi.KalanBorc -= odenecekTutar;
+
+                var islem = new IslemGecmisi
+                {
+                    IslemTuru = "Kredi Ödemesi",
+                    Miktar = odenecekTutar,
+                    IslemTarihi = DateTime.Now,
+                    KaynakHesap = hesap.HesapNo,
+                    Aciklama = $"Kredi ID: {secilenKredi.KrediId} için ödeme"
+                };
+
+                hesap.Islemler.Add(islem);
+
+                if (secilenKredi.KalanBorc <= 0)
+                {
+                    secilenKredi.Durumu = "Kapandı";
+                }
+
+                Console.WriteLine("Ödeme başarıyla gerçekleştirildi!");
+            }
+            else
+            {
+                Console.WriteLine("Yetersiz bakiye!");
+            }
+
+            Thread.Sleep(2000);
+        }
+
+        private void DovizSat()
+        {
+            Console.Clear();
+            Console.WriteLine("=== DÖVİZ SATIM ===");
+            
+            var hesap = HesapSec();
+            if (hesap == null) return;
+
+            Console.Write("Döviz türü (USD/EUR/GBP): ");
+            string dovizTuru = Console.ReadLine().ToUpper();
+
+            if (!dovizKurlari.ContainsKey(dovizTuru))
+            {
+                Console.WriteLine("Geçersiz döviz türü!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.Write("Miktar: ");
+            if (!decimal.TryParse(Console.ReadLine(), out decimal miktar))
+            {
+                Console.WriteLine("Geçersiz miktar!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            decimal toplamTutar = miktar * (dovizKurlari[dovizTuru] * 0.98M); // %2 spread
+
+            hesap.Bakiye += toplamTutar;
+            Console.WriteLine($"\n{miktar} {dovizTuru} satım işlemi başarıyla gerçekleştirildi.");
+            Console.WriteLine($"Hesabınıza Yatan Tutar: {toplamTutar:N2} TL");
+            
+            var islem = new IslemGecmisi
+            {
+                IslemTuru = "Döviz Satım",
+                Miktar = toplamTutar,
+                IslemTarihi = DateTime.Now,
+                KaynakHesap = hesap.HesapNo,
+                Aciklama = $"{miktar} {dovizTuru} satıldı"
+            };
+            
+            hesap.Islemler.Add(islem);
+            Thread.Sleep(2000);
+        }
+
+        private void OtomatikOdemeTalimatlariniListele()
+        {
+            Console.Clear();
+            Console.WriteLine("=== OTOMATİK ÖDEME TALİMATLARI ===");
+
+            var hesaplar = aktifMusteri.Hesaplar.Select(h => h.HesapNo).ToList();
+            var talimatlar = otomatikOdemeler
+                .Where(o => hesaplar.Contains(o.HesapNo) && o.AktifMi)
+                .ToList();
+
+            if (!talimatlar.Any())
+            {
+                Console.WriteLine("Aktif otomatik ödeme talimatınız bulunmamaktadır!");
+            }
+            else
+            {
+                foreach (var talimat in talimatlar)
+                {
+                    Console.WriteLine($"\nTalimat ID: {talimat.OdemeId}");
+                    Console.WriteLine($"Hesap No: {talimat.HesapNo}");
+                    Console.WriteLine($"Ödeme Türü: {talimat.OdemeTuru}");
+                    Console.WriteLine($"Aylık Ödeme Tutarı: {talimat.Miktar:C}");
+                    Console.WriteLine($"Ödeme Günü: {talimat.GunNo}");
+                    Console.WriteLine($"Açıklama: {talimat.Aciklama}");
+                    Console.WriteLine("------------------------");
+                }
+            }
+
+            Console.WriteLine("\nDevam etmek için bir tuşa basın...");
+            Console.ReadKey();
+        }
+
+        private void OtomatikOdemeTalimatiIptal()
+        {
+            Console.Clear();
+            Console.WriteLine("=== OTOMATİK ÖDEME TALİMATI İPTAL ===");
+
+            var hesaplar = aktifMusteri.Hesaplar.Select(h => h.HesapNo).ToList();
+            var talimatlar = otomatikOdemeler
+                .Where(o => hesaplar.Contains(o.HesapNo) && o.AktifMi)
+                .ToList();
+
+            if (!talimatlar.Any())
+            {
+                Console.WriteLine("Aktif otomatik ödeme talimatınız bulunmamaktadır!");
+                Thread.Sleep(2000);
+                return;
+            }
+
+            Console.WriteLine("İptal edilecek talimatı seçin:");
+            for (int i = 0; i < talimatlar.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {talimatlar[i].OdemeTuru} - {talimatlar[i].Miktar:C}");
+            }
+
+            Console.Write("\nSeçiminiz (1-" + talimatlar.Count + "): ");
+            if (int.TryParse(Console.ReadLine(), out int secim) && secim >= 1 && secim <= talimatlar.Count)
+            {
+                var talimat = talimatlar[secim - 1];
+                talimat.AktifMi = false;
+                Console.WriteLine("Otomatik ödeme talimatı başarıyla iptal edildi!");
+            }
+            else
+            {
+                Console.WriteLine("Geçersiz seçim!");
+            }
+
+            Thread.Sleep(2000);
+        }
     }
 }
